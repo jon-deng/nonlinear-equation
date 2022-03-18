@@ -1,8 +1,8 @@
 """
 Generic module to solve nonlinear equations with the Newton's method
 """
+import warnings
 
-import typing as typg
 import numpy as np
 
 DEFAULT_NEWTON_SOLVER_PRM = {
@@ -66,7 +66,7 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
         elif np.isnan(rel_errs[-1]) or np.isnan(abs_errs[-1]):
             exit_status = 1
             exit_message = "solver failed due to nan"
-        elif n > max_it:
+        elif n > max_iter:
             exit_status = 2
             exit_message = "solver reached maximum number of iterations"
 
@@ -78,8 +78,9 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
             break
             
     if exit_status == 2:
-        wrn.warn("Newton solve failed to converge before maximum"
-                 " iteration count reached.", UserWarning)
+        warnings.warn(
+            "Newton solve failed to converge before maximum"
+            " iteration count reached.", UserWarning)
 
     info = {'status': exit_status,
             'message': exit_message,
