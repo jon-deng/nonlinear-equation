@@ -66,7 +66,7 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
         elif np.isnan(rel_errs[-1]) or np.isnan(abs_errs[-1]):
             exit_status = 1
             exit_message = "solver failed due to nan"
-        elif nit > max_it:
+        elif n > max_it:
             exit_status = 2
             exit_message = "solver reached maximum number of iterations"
 
