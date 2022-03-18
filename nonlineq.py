@@ -45,7 +45,7 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
 
     norm = generic_norm if norm is None else norm
 
-    exit_status = 0
+    exit_status = -1
     abs_errs, rel_errs = [], []
     n = 0
     x_n = x_0
@@ -59,26 +59,30 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
         rel_err = 0.0 if abs_errs[0] == 0 else abs_err/abs_errs[0]
         rel_errs.append(rel_err)
 
-        # check for convergence of error measures
+        # check for convergence of error measures/exit conditions
         if rel_errs[-1] <= rel_tol or abs_errs[-1] <= abs_tol:
-            exit_status = 1 # This is a proper exit where the solver met the tolerance
+            exit_status = 0
+            exit_message = "solver converged"
         elif np.isnan(rel_errs[-1]) or np.isnan(abs_errs[-1]):
-            exit_status = 2
+            exit_status = 1
+            exit_message = "solver failed due to nan"
         elif nit > max_it:
-            exit_status = 3
+            exit_status = 2
+            exit_message = "solver reached maximum number of iterations"
 
-        if exit_status == 0:
+        if exit_status == -1:
             dx_n = step_size*solve(res_n)
             x_n = x_n - dx_n
             n += 1
         else:
             break
             
-    if exit_status == 3:
+    if exit_status == 2:
         wrn.warn("Newton solve failed to converge before maximum"
                  " iteration count reached.", UserWarning)
 
     info = {'status': exit_status,
+            'message': exit_message,
             'abs_errs': np.array(abs_errs),
             'rel_errs': np.array(rel_errs)}
     return x_n, info
