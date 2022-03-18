@@ -38,7 +38,11 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
     info : dict
         Dictionary summarizing run info
     """
-    params = DEFAULT_NEWTON_SOLVER_PRM if params is None else params
+    _params = DEFAULT_NEWTON_SOLVER_PRM.copy()
+    params = params if params is not None else {}
+    _params.update(params)
+    params = _params
+
     abs_tol = params['absolute_tolerance']
     rel_tol = params['relative_tolerance']
     max_iter = params['maximum_iterations']
