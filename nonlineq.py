@@ -38,6 +38,49 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
     info : dict
         Dictionary summarizing run info
     """
+    def iterative_subproblem(x):
+
+        assem_res, solve_jac = linear_subproblem(x)
+
+        def res():
+            return assem_res()
+
+        def solve(res):
+            dx = solve_jac(-res)
+            return x + dx
+
+        return res, solve
+
+    return iterative_solve(x_0, iterative_subproblem, norm, step_size, params)
+
+def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=None):
+    """
+    Solve a non-linear problem with the Newton-Raphson method
+
+    Parameters
+    ----------
+    x_0 : A
+        Initial guess
+    iterative_subproblem : fn(A) -> (fn() -> A, fn(A) -> A)
+        A function that returns two functions defining the iterative subproblem.
+        The first function returns a residual, representing the error at the
+        current iteration.
+        The second function returns a solver that return the next iterate from
+        the current residual.
+    norm : fn(A) -> float
+        Callable returning a norm for vectors of type `A`
+    step_size : float
+        Step size control for Newton-Raphson
+    params : dict
+        Dictionary of parameters for newton solver
+        {'absolute_tolerance', 'relative_tolerance', 'maximum_iterations'}
+
+    Returns
+    -------
+    xn : A
+    info : dict
+        Dictionary summarizing run info
+    """
     _params = DEFAULT_NEWTON_SOLVER_PRM.copy()
     params = params if params is not None else {}
     _params.update(params)
@@ -54,16 +97,16 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
     n = 0
     x_n = x_0
     while True:
-        # compute the residual/residual norm and error measures
-        assem_res, solve = linear_subproblem(x_n)
+        # Compute the residual/residual norm and error measures
+        assem_res, solve = iterative_subproblem(x_n)
         res_n = assem_res()
- 
+
         abs_err = norm(res_n)
         abs_errs.append(abs_err)
         rel_err = 0.0 if abs_errs[0] == 0 else abs_err/abs_errs[0]
         rel_errs.append(rel_err)
 
-        # check for convergence of error measures/exit conditions
+        # Check for convergence of error measures/exit conditions
         if rel_errs[-1] <= rel_tol or abs_errs[-1] <= abs_tol:
             exit_status = 0
             exit_message = "solver converged"
@@ -75,15 +118,14 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
             exit_message = "solver reached maximum number of iterations"
 
         if exit_status == -1:
-            dx_n = step_size*solve(res_n)
-            x_n = x_n - dx_n
+            x_n = solve(res_n)
             n += 1
         else:
             break
-            
+
     if exit_status == 2:
         warnings.warn(
-            "Newton solve failed to converge before maximum"
+            "Iterative solver failed to converge before maximum"
             " iteration count reached.", UserWarning)
 
     info = {'status': exit_status,
@@ -92,9 +134,10 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
             'rel_errs': np.array(rel_errs)}
     return x_n, info
 
+
 def generic_norm(x):
     if isinstance(x, np.ndarray):
         return np.linalg.norm(x)
     else:
         return x.norm()
-    
+
