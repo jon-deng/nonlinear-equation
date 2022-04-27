@@ -128,10 +128,12 @@ def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=
             "Iterative solver failed to converge before maximum"
             " iteration count reached.", UserWarning)
 
-    info = {'status': exit_status,
-            'message': exit_message,
-            'abs_errs': np.array(abs_errs),
-            'rel_errs': np.array(rel_errs)}
+    info = {
+        'num_iter': n,
+        'status': exit_status,
+        'message': exit_message,
+        'abs_errs': np.array(abs_errs),
+        'rel_errs': np.array(rel_errs)}
     return x_n, info
 
 
