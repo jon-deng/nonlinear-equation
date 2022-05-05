@@ -8,7 +8,8 @@ import numpy as np
 DEFAULT_NEWTON_SOLVER_PRM = {
     'absolute_tolerance': 1e-8,
     'relative_tolerance': 1e-10,
-    'maximum_iterations': 50
+    'maximum_iterations': 50,
+    'divergence_tolerance': 5
 }
 
 # from typing import TypeVar, Callable
@@ -89,6 +90,7 @@ def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=
     abs_tol = params['absolute_tolerance']
     rel_tol = params['relative_tolerance']
     max_iter = params['maximum_iterations']
+    div_tol = params['divergence_tolerance']
 
     norm = generic_norm if norm is None else norm
 
@@ -116,6 +118,9 @@ def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=
         elif n > max_iter:
             exit_status = 2
             exit_message = "solver reached maximum number of iterations"
+        elif len(abs_errs) >= div_tol and is_increasing(abs_errs[-div_tol:]):
+            exit_status = 3
+            exit_message = "solver detected diverging estimates"
 
         if exit_status == -1:
             x_n = solve(res_n)
@@ -143,3 +148,5 @@ def generic_norm(x):
     else:
         return x.norm()
 
+def is_increasing(x):
+    return all([x2 > x1 for x2, x1 in zip(x[:-1], x[1:])])
