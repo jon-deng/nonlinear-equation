@@ -118,7 +118,7 @@ def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=
         elif n > max_iter:
             exit_status = 2
             exit_message = "solver reached maximum number of iterations"
-        elif len(abs_errs) >= div_tol and is_increasing(abs_errs[-div_tol:]):
+        elif len(abs_errs) >= div_tol and abs_errs[-div_tol] > abs_errs[-1]:
             exit_status = 3
             exit_message = "solver detected diverging estimates"
 
