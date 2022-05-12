@@ -128,11 +128,6 @@ def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=
         else:
             break
 
-    if exit_status == 2:
-        warnings.warn(
-            "Iterative solver failed to converge before maximum"
-            " iteration count reached.", UserWarning)
-
     info = {
         'num_iter': n,
         'status': exit_status,
