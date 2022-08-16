@@ -1,7 +1,7 @@
 """
 Generic module to solve nonlinear equations with the Newton's method
 """
-import warnings
+from typing import Tuple, Callable, Mapping, TypeVar, Any, Optional
 
 import numpy as np
 
@@ -12,19 +12,22 @@ DEFAULT_NEWTON_SOLVER_PRM = {
     'divergence_tolerance': 5
 }
 
-# from typing import TypeVar, Callable
-# A = TypeVar('A')
-# SUBPROB_TYPE = Callable[[A,], Tuple[Callable[[], A], Callable[[A,], A]]]
-def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
-    """
-    Solve a non-linear problem with the Newton-Raphson method
+A = TypeVar('A')
+Subproblem = Callable[[A,], Tuple[Callable[[], A], Callable[[A,], A]]]
+Norm = Callable[[A], float]
+Parameters = Mapping[str, Any]
+Info = Mapping[str, Any]
 
+def add_docstring(func):
+    doc = (
+    """
     Parameters
     ----------
     x_0 : A
         Initial guess
-    linear_subproblem : fn(A) -> (fn() -> A, fn(A) -> A)
-        Callable returning a residual function and linear solver about a state.
+    linear_subproblem : Subproblem
+        Callable returning a residual function and linear solver for the current
+        iterate.
     norm : fn(A) -> float
         Callable returning a norm for vectors of type `A`
     step_size : float
@@ -35,9 +38,26 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
 
     Returns
     -------
-    xn : A
-    info : dict
+    A
+        The solution of the problem
+    Info
         Dictionary summarizing run info
+    """
+    )
+    func.__doc__ = func.__doc__ + doc
+    return func
+
+@add_docstring
+def newton_solve(
+        x_0: A,
+        linear_subproblem: Subproblem,
+        norm: Optional[Norm]=None,
+        step_size: float=1.0,
+        params: Optional[Parameters]=None
+    ) -> Tuple[A, Info]:
+    """
+    Solve an equation with the Newton-Raphson method
+
     """
     def iterative_subproblem(x):
 
@@ -48,39 +68,22 @@ def newton_solve(x_0, linear_subproblem, norm=None, step_size=1.0, params=None):
 
         def solve(res):
             dx = solve_jac(-res)
-            return x + dx
+            return x + step_size*dx
 
         return res, solve
 
-    return iterative_solve(x_0, iterative_subproblem, norm, step_size, params)
+    return iterative_solve(x_0, iterative_subproblem, norm, params)
 
-def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=None):
+@add_docstring
+def iterative_solve(
+        x_0: A,
+        iterative_subproblem: Subproblem,
+        norm: Optional[Norm]=None,
+        params: Optional[Parameters]=None
+    ) -> Tuple[A, Info]:
     """
-    Solve a non-linear problem with the Newton-Raphson method
+    Solve an equation with an iterative method
 
-    Parameters
-    ----------
-    x_0 : A
-        Initial guess
-    iterative_subproblem : fn(A) -> (fn() -> A, fn(A) -> A)
-        A function that returns two functions defining the iterative subproblem.
-        The first function returns a residual, representing the error at the
-        current iteration.
-        The second function returns a solver that return the next iterate from
-        the current residual.
-    norm : fn(A) -> float
-        Callable returning a norm for vectors of type `A`
-    step_size : float
-        Step size control for Newton-Raphson
-    params : dict
-        Dictionary of parameters for newton solver
-        {'absolute_tolerance', 'relative_tolerance', 'maximum_iterations'}
-
-    Returns
-    -------
-    xn : A
-    info : dict
-        Dictionary summarizing run info
     """
     _params = DEFAULT_NEWTON_SOLVER_PRM.copy()
     params = params if params is not None else {}
@@ -133,15 +136,22 @@ def iterative_solve(x_0, iterative_subproblem, norm=None, step_size=1.0, params=
         'status': exit_status,
         'message': exit_message,
         'abs_errs': np.array(abs_errs),
-        'rel_errs': np.array(rel_errs)}
+        'rel_errs': np.array(rel_errs)
+    }
     return x_n, info
 
 
-def generic_norm(x):
+def generic_norm(x: A) -> float:
+    """
+    Return a generic norm of a vector
+    """
     if isinstance(x, np.ndarray):
         return np.linalg.norm(x)
     else:
         return x.norm()
 
-def is_increasing(x):
+def is_increasing(x) -> bool:
+    """
+    Return whether a sequence is purely increasing
+    """
     return all([x2 > x1 for x2, x1 in zip(x[:-1], x[1:])])
