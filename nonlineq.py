@@ -25,9 +25,11 @@ def add_docstring(func):
     ----------
     x_0 : A
         Initial guess
-    linear_subproblem : Subproblem
-        Callable returning a residual function and linear solver for the current
-        iterate.
+    iterative_subproblem : Subproblem
+        Callable returning a residual function and iterative solver for the
+        current iterate. The residual should return the residual for the
+        equation while the iterative solver should return the next iterate
+        for a provided residual.
     norm : fn(A) -> float
         Callable returning a norm for vectors of type `A`
     step_size : float
