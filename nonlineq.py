@@ -1,5 +1,5 @@
 """
-Generic module to solve nonlinear equations with the Newton's method
+A module for solving nonlinear equations with iterative methods
 """
 from typing import Tuple, Callable, Mapping, TypeVar, Any, Optional
 
@@ -18,20 +18,34 @@ Norm = Callable[[A], float]
 Parameters = Mapping[str, Any]
 Info = Mapping[str, Any]
 
-def add_docstring(func):
-    doc = (
-    """
+def newton_solve(
+        x_0: A,
+        linear_subproblem: Subproblem,
+        norm: Optional[Norm]=None,
+        step_size: float=1.0,
+        params: Optional[Parameters]=None
+    ) -> Tuple[A, Info]:
+    r"""
+    Solve a non-linear equation with the Newton-Raphson method
+
+    The non-linear equation has the generic form
+    .. math:: f(x) = 0
+
     Parameters
     ----------
     x_0 : A
-        Initial guess
-    iterative_subproblem : Subproblem
-        Callable returning a residual function and iterative solver for the
-        current iterate. The residual should return the residual for the
-        equation while the iterative solver should return the next iterate
-        for a provided residual.
-    norm : fn(A) -> float
-        Callable returning a norm for vectors of type `A`
+        The initial guess
+    linear_subproblem : Subproblem
+        A function that accepts the current iterative solution `x` and returns
+        two functions for the linear subproblem:
+            - A residual function, with no parameters which returns the residual
+            - A jacobian solver that applies the inverse of the jacobian for an
+            input residual
+
+            For some residual vector :math:`r`,  this should return
+            :math:`{\frac{df}{dx}}^{-1}r`.
+    norm : Callable[[A], float]
+        Callable returning a norm for residuals
     step_size : float
         Step size control for Newton-Raphson
     params : dict
@@ -40,27 +54,12 @@ def add_docstring(func):
 
     Returns
     -------
-    A
+    x: A
         The solution of the problem
-    Info
+    info: Info
         Dictionary summarizing run info
     """
-    )
-    func.__doc__ = func.__doc__ + doc
-    return func
 
-@add_docstring
-def newton_solve(
-        x_0: A,
-        linear_subproblem: Subproblem,
-        norm: Optional[Norm]=None,
-        step_size: float=1.0,
-        params: Optional[Parameters]=None
-    ) -> Tuple[A, Info]:
-    """
-    Solve an equation with the Newton-Raphson method
-
-    """
     def iterative_subproblem(x):
 
         assem_res, solve_jac = linear_subproblem(x)
@@ -76,16 +75,41 @@ def newton_solve(
 
     return iterative_solve(x_0, iterative_subproblem, norm, params)
 
-@add_docstring
 def iterative_solve(
         x_0: A,
         iterative_subproblem: Subproblem,
         norm: Optional[Norm]=None,
         params: Optional[Parameters]=None
     ) -> Tuple[A, Info]:
-    """
-    Solve an equation with an iterative method
+    r"""
+    Solve a non-linear equation with an iterative method
 
+    The non-linear equation has the generic form
+    .. math:: f(x) = 0
+
+    Parameters
+    ----------
+    x_0 : A
+        The initial guess
+    iterative_subproblem : Subproblem
+        A function that accepts the current iterative solution `x` and returns
+        two functions for the iterative subproblem:
+            - A residual function, with no parameters which returns the residual
+            - A solver that returns the next iterative solution given a residual
+    norm : Callable[[A], float]
+        Callable returning a norm for residuals
+    step_size : float
+        Step size control for Newton-Raphson
+    params : dict
+        Dictionary of parameters for newton solver
+        {'absolute_tolerance', 'relative_tolerance', 'maximum_iterations'}
+
+    Returns
+    -------
+    x: A
+        The solution of the problem
+    info: Info
+        Dictionary summarizing run info
     """
     _params = DEFAULT_NEWTON_SOLVER_PRM.copy()
     params = params if params is not None else {}
