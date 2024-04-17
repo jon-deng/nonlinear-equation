@@ -1,6 +1,7 @@
 """
 A module for solving nonlinear equations with iterative methods
 """
+
 from typing import Tuple, Callable, Mapping, TypeVar, Any, Optional
 
 import numpy as np
@@ -9,22 +10,36 @@ DEFAULT_NEWTON_SOLVER_PRM = {
     'absolute_tolerance': 1e-8,
     'relative_tolerance': 1e-10,
     'maximum_iterations': 50,
-    'divergence_tolerance': 5
+    'divergence_tolerance': 5,
 }
 
 A = TypeVar('A')
-Subproblem = Callable[[A,], Tuple[Callable[[], A], Callable[[A,], A]]]
+Subproblem = Callable[
+    [
+        A,
+    ],
+    Tuple[
+        Callable[[], A],
+        Callable[
+            [
+                A,
+            ],
+            A,
+        ],
+    ],
+]
 Norm = Callable[[A], float]
 Parameters = Mapping[str, Any]
 Info = Mapping[str, Any]
 
+
 def newton_solve(
-        x_0: A,
-        linear_subproblem: Subproblem,
-        norm: Optional[Norm]=None,
-        step_size: float=1.0,
-        params: Optional[Parameters]=None
-    ) -> Tuple[A, Info]:
+    x_0: A,
+    linear_subproblem: Subproblem,
+    norm: Optional[Norm] = None,
+    step_size: float = 1.0,
+    params: Optional[Parameters] = None,
+) -> Tuple[A, Info]:
     r"""
     Solve a non-linear equation with the Newton-Raphson method
 
@@ -69,18 +84,19 @@ def newton_solve(
 
         def solve(res):
             dx = solve_jac(-res)
-            return x + step_size*dx
+            return x + step_size * dx
 
         return res, solve
 
     return iterative_solve(x_0, iterative_subproblem, norm, params)
 
+
 def iterative_solve(
-        x_0: A,
-        iterative_subproblem: Subproblem,
-        norm: Optional[Norm]=None,
-        params: Optional[Parameters]=None
-    ) -> Tuple[A, Info]:
+    x_0: A,
+    iterative_subproblem: Subproblem,
+    norm: Optional[Norm] = None,
+    params: Optional[Parameters] = None,
+) -> Tuple[A, Info]:
     r"""
     Solve a non-linear equation with an iterative method
 
@@ -134,7 +150,7 @@ def iterative_solve(
 
         abs_err = norm(res_n)
         abs_errs.append(abs_err)
-        rel_err = 0.0 if abs_errs[0] == 0 else abs_err/abs_errs[0]
+        rel_err = 0.0 if abs_errs[0] == 0 else abs_err / abs_errs[0]
         rel_errs.append(rel_err)
 
         # Check for convergence of error measures/exit conditions
@@ -162,7 +178,7 @@ def iterative_solve(
         'status': exit_status,
         'message': exit_message,
         'abs_errs': np.array(abs_errs),
-        'rel_errs': np.array(rel_errs)
+        'rel_errs': np.array(rel_errs),
     }
     return x_n, info
 
@@ -175,6 +191,7 @@ def generic_norm(x: A) -> float:
         return np.linalg.norm(x)
     else:
         return x.norm()
+
 
 def is_increasing(x) -> bool:
     """
