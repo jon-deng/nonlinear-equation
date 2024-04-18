@@ -15,9 +15,7 @@ DEFAULT_NEWTON_SOLVER_PRM = {
 
 A = TypeVar('A')
 Subproblem = Callable[
-    [
-        A,
-    ],
+    [A, Optional[int]],
     Tuple[
         Callable[[], A],
         Callable[
@@ -48,22 +46,22 @@ def newton_solve(
 
     Parameters
     ----------
-    x_0 : A
+    x_0: A
         The initial guess
-    linear_subproblem : Subproblem
-        A function that accepts the current iterative solution `x` and returns
-        two functions for the linear subproblem:
-            - A residual function, with no parameters which returns the residual
-            - A jacobian solver that applies the inverse of the jacobian for an
-            input residual
+    linear_subproblem: Subproblem
+        A function that accepts the current iterative solution `x` and iteration `n`
+        and returns two functions for the linear subproblem:
+            - a residual function, with no parameters, that returns the residual
+            - and a jacobian solver that applies the inverse of the jacobian for a
+            given residual
 
             For some residual vector :math:`r`,  this should return
             :math:`{\frac{df}{dx}}^{-1}r`.
-    norm : Callable[[A], float]
+    norm: Callable[[A], float]
         Callable returning a norm for residuals
-    step_size : float
+    step_size: float
         Step size control for Newton-Raphson
-    params : dict
+    params: dict
         Dictionary of parameters for newton solver
         {'absolute_tolerance', 'relative_tolerance', 'maximum_iterations'}
 
@@ -75,7 +73,7 @@ def newton_solve(
         Dictionary summarizing run info
     """
 
-    def iterative_subproblem(x):
+    def iterative_subproblem(x, n=None):
 
         assem_res, solve_jac = linear_subproblem(x)
 
@@ -89,7 +87,6 @@ def newton_solve(
         return res, solve
 
     return iterative_solve(x_0, iterative_subproblem, norm, params)
-
 
 def iterative_solve(
     x_0: A,
@@ -105,18 +102,18 @@ def iterative_solve(
 
     Parameters
     ----------
-    x_0 : A
+    x_0: A
         The initial guess
     iterative_subproblem : Subproblem
-        A function that accepts the current iterative solution `x` and returns
-        two functions for the iterative subproblem:
-            - A residual function, with no parameters which returns the residual
-            - A solver that returns the next iterative solution given a residual
-    norm : Callable[[A], float]
+        A function that accepts the current iterative solution `x` and iteration `n`
+        and returns two functions for the iterative subproblem:
+            - a residual function, with no parameters, which returns the residual
+            - and a solver that returns the next iterative solution given a residual
+    norm: Callable[[A], float]
         Callable returning a norm for residuals
-    step_size : float
+    step_size: float
         Step size control for Newton-Raphson
-    params : dict
+    params: dict
         Dictionary of parameters for newton solver
         {'absolute_tolerance', 'relative_tolerance', 'maximum_iterations'}
 
